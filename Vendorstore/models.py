@@ -13,30 +13,8 @@ class VendorModel(models.Model):
     average_response_time = models.FloatField()
     fulfillment_rate = models.FloatField()
     
-    def calculate_performance_metrics(self):
-        # On-Time Delivery Rate
-        completed_pos = self.purchaseorder_set.filter(status='completed')
-        on_time_delivered_pos = completed_pos.filter(delivery_date__lte=timezone.now())
-        on_time_delivery_rate = on_time_delivered_pos.count() / completed_pos.count()
-
-        # Quality Rating Average
-        quality_rating_avg = completed_pos.filter(quality_rating__isnull=False).aggregate(avg_quality=Avg('quality_rating'))['avg_quality']
-
-        # Average Response Time
-        response_times = completed_pos.exclude(acknowledgment_date=None).annotate(
-            response_time=Avg(F('acknowledgment_date') - F('issue_date'))
-        )
-        average_response_time = response_times.aggregate(avg_response=Avg('response_time'))['avg_response']
-
-        # Fulfilment Rate
-        fulfillment_rate = completed_pos.filter(issues=None).count() / self.purchaseorder_set.count()
-
-        return {
-            'on_time_delivery_rate': on_time_delivery_rate,
-            'quality_rating_avg': quality_rating_avg,
-            'average_response_time': average_response_time,
-            'fulfillment_rate': fulfillment_rate
-        }
+    def __str__(self):
+        return self.name
 
 class PurchaseOrder(models.Model):
     vendor = models.ForeignKey(VendorModel, on_delete=models.CASCADE)
@@ -50,12 +28,18 @@ class PurchaseOrder(models.Model):
     quality_rating = models.FloatField(null=True, blank=True)
     issue_date = models.DateTimeField()
     acknowledgment_date = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return self.po_number
 
 class HistoricalPerformance(models.Model):
     vendor = models.ForeignKey(VendorModel, on_delete=models.CASCADE)
-    
+
     date = models.DateTimeField()
     on_time_delivery_rate = models.FloatField()
     quality_rating_avg = models.FloatField()
     average_response_time = models.FloatField()
     fulfillment_rate = models.FloatField()
+
+    def __str__(self):
+        return f"{self.vendor.name} - {self.date}"

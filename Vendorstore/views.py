@@ -166,3 +166,22 @@ class PurchaseOrderApiView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
+class HistoricalPerformanceApiView(APIView):
+    def get(self, request, vendor_id):
+        if not vendor_id:
+            data = {
+                'success': 'False',
+                'status_code': status.HTTP_400_BAD_REQUEST,
+                'message': 'Vendor ID is required',
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        
+        historical_performances = HistoricalPerformance.objects.filter(vendor_id=vendor_id)
+        serializer = HistoricalPerformanceSerializer(historical_performances, many=True)
+        data = {
+            'success': 'True',
+            'status_code': status.HTTP_200_OK,
+            'message': 'Success',
+            'data': serializer.data
+        }
+        return Response(data, status=status.HTTP_200_OK)
