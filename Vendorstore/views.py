@@ -8,10 +8,11 @@ from rest_framework import status
 
 from Vendorstore.models import *
 from Vendorstore.serializer import *
+from Vendorstore.logic import *
 # Create your views here.
 
 class VendorSroreApiView(APIView):
-    def get(self, request, vendor_id):
+    def get(self, request, vendor_id=None):
         if vendor_id:
             vendor = get_object_or_404(VendorModel, id=vendor_id)
             serializer = VendorSerializer(vendor)
@@ -23,7 +24,7 @@ class VendorSroreApiView(APIView):
             }
             return Response(data, status=status.HTTP_200_OK)
         else:
-            vendors = VendorModel.objects.all()
+            vendors = VendorModel.objects.order_by('-created_at')
             serializer = VendorSerializer(vendors, many=True)
             data = {
                 'success': 'True',
@@ -97,7 +98,7 @@ class PurchaseOrderApiView(APIView):
             }
             return Response(data, status=status.HTTP_200_OK)
         else:
-            pos = PurchaseOrder.objects.all()
+            pos = PurchaseOrder.objects.select_related('vendor').order_by('-created_at')
             serializer = PurchaseOrderSerializer(pos, many=True)
             data = {
                 'success': 'True',
@@ -181,7 +182,40 @@ class HistoricalPerformanceApiView(APIView):
         data = {
             'success': 'True',
             'status_code': status.HTTP_200_OK,
-            'message': 'Success',
+            'message': ' Vendor Performance History Success',
             'data': serializer.data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+class VendorPerformanceApiView(APIView):
+    def get(self, request, vendor_id):
+        vendor = get_object_or_404(VendorModel, id=vendor_id)
+        data = {
+            'success': 'True',
+            'status_code': status.HTTP_200_OK,
+            'message': 'Get Vendor Performance Success',
+            'data': {
+                'vendor_name': vendor.name,
+                'on_time_delivery_rate': vendor.on_time_delivery_rate,
+                'quality_rating_avg': vendor.quality_rating_avg,
+                'average_response_time': vendor.average_response_time,
+                'fulfillment_rate': vendor.fulfillment_rate
+            }
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+class AcknowledgePurchaseOrderApiView(APIView):
+    def post(self, request, po_id):
+        purchase_order = get_object_or_404(PurchaseOrder, po_number=po_id)
+        purchase_order.acknowledgment_date = timezone.now()  # Update acknowledgment_date
+        purchase_order.save()  # Save the changes
+
+        # Recalculate average_response_time
+        calculate_average_response_time(purchase_order.vendor)
+
+        data = {
+            'success': 'True',
+            'status_code': status.HTTP_200_OK,
+            'message': 'Purchase Order acknowledged successfully',
         }
         return Response(data, status=status.HTTP_200_OK)

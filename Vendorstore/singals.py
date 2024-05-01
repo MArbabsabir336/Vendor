@@ -1,16 +1,11 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from Vendorstore.models import *
+from Vendorstore.models import PurchaseOrder, HistoricalPerformance
 from Vendorstore.logic import *
 
 @receiver(post_save, sender=PurchaseOrder)
-@receiver(post_delete, sender=PurchaseOrder)
-def update_vendor_performance(sender, instance, **kwargs):
+def update_vendor_performance(sender, instance, *args, **kwargs):
     calculate_performance_metrics(instance.vendor)
-
-
-@receiver(post_save, sender=PurchaseOrder)    
-def save_historical_performance(sender, instance, **kwargs):
     HistoricalPerformance.objects.create(
         vendor=instance.vendor,
         date=instance.delivery_date,
@@ -19,3 +14,4 @@ def save_historical_performance(sender, instance, **kwargs):
         average_response_time=instance.vendor.average_response_time,
         fulfillment_rate=instance.vendor.fulfillment_rate
     )
+    

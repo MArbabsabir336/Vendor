@@ -9,7 +9,8 @@ urlpatterns = [
 
     # Purchase Order ----------------
     path('purchase_orders/', PurchaseOrderApiView.as_view()),
-    path('purchase_orders/<int:po_id>/', PurchaseOrderApiView.as_view()),
+    path('purchase_orders/<str:po_id>/', PurchaseOrderApiView.as_view()),
     
-    path('vendors/<str:vendor_id>/purchase_orders/', HistoricalPerformanceApiView.as_view()),
+    path('vendors/<str:vendor_id>/performance/', VendorPerformanceApiView.as_view()),
+    path('purchase_orders/<str:po_id>/acknowledge/', AcknowledgePurchaseOrderApiView.as_view()),
 ]
