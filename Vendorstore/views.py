@@ -2,16 +2,57 @@ import uuid
 import time
 
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth import authenticate
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import generics, permissions
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
+
 
 from Vendorstore.models import *
 from Vendorstore.serializer import *
 from Vendorstore.logic import *
 # Create your views here.
 
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (permissions.AllowAny,)
+    
+
+class LoginView(generics.GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if username is None or password is None:
+            return Response({'error': 'Please provide both username and password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(username=username, password=password)
+
+        if not user:
+            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token, _ = Token.objects.get_or_create(user=user)
+        data = {
+            'success': 'True',
+            'status_code': status.HTTP_200_OK,
+            'message': 'Login successful',
+            'Token': token.key,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
 class VendorSroreApiView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request, vendor_id=None):
         if vendor_id:
             vendor = get_object_or_404(VendorModel, id=vendor_id)
@@ -85,7 +126,9 @@ class VendorSroreApiView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
+    
 class PurchaseOrderApiView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, po_id):
         if po_id:
             po = get_object_or_404(PurchaseOrder, id=po_id)
@@ -167,7 +210,9 @@ class PurchaseOrderApiView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
+    
 class HistoricalPerformanceApiView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, vendor_id):
         if not vendor_id:
             data = {
@@ -187,7 +232,9 @@ class HistoricalPerformanceApiView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
+    
 class VendorPerformanceApiView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, vendor_id):
         vendor = get_object_or_404(VendorModel, id=vendor_id)
         data = {
@@ -204,7 +251,9 @@ class VendorPerformanceApiView(APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+
 class AcknowledgePurchaseOrderApiView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, po_id):
         purchase_order = get_object_or_404(PurchaseOrder, po_number=po_id)
         purchase_order.acknowledgment_date = timezone.now()  # Update acknowledgment_date

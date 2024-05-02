@@ -12,7 +12,7 @@ class VendorModel(CommonField):
     vendor_code = models.CharField(max_length=50, unique=True)
     on_time_delivery_rate = models.FloatField(default=0.0)
     quality_rating_avg = models.FloatField(default=0.0)
-    average_response_time = models.FloatField(default=0.0)
+    average_response_time = models.DurationField(null=True, blank=True)
     fulfillment_rate = models.FloatField(default=0.0)
     
     def __str__(self):
@@ -36,10 +36,10 @@ class PurchaseOrder(CommonField):
 class HistoricalPerformance(CommonField):
     vendor = models.ForeignKey(VendorModel, on_delete=models.CASCADE)
 
-    date = models.DateTimeField()
+    date = models.DateTimeField(auto_now=True)
     on_time_delivery_rate = models.FloatField()
     quality_rating_avg = models.FloatField()
-    average_response_time = models.FloatField()
+    average_response_time = models.DurationField(null=True, blank=True)
     fulfillment_rate = models.FloatField()
 
     def __str__(self):
